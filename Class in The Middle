@@ -1,5 +1,8 @@
 // WebSocket is just an example of possible classes
 
+// This is a general class encapsulation, it recreates every class as a copy of the original but pushes *some* code in it's middle,
+// usually to help understand undocumented codes, so you can "Tamper" with it.
+
 WebSocket2 = WebSocket; /*eslint-disable-line*/
 
 WebSocket = class
