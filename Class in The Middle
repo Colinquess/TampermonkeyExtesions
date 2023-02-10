@@ -1,0 +1,80 @@
+// WebSocket is just an example of possible classes
+
+WebSocket2 = WebSocket; /*eslint-disable-line*/
+
+WebSocket = class
+{
+	//Use this with the extension TamperMonkey, to ensure it's running firt before the rest of the page
+	// https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo
+	constructor( ...args )
+	{
+		//If there's inheritance remember to call super() first thing
+		//super();
+
+		this.originalClass = new window[this.constructor.name]( ...args );
+
+		let constructorContext = this;
+
+		var infos = Object.keys( this.originalClass ).concat( Object.keys( this.originalClass.__proto__ ) );
+
+		infos.forEach( function ( key )
+		{
+			if ( typeof constructorContext.originalClass[key] == 'function' )
+			{
+				constructorContext[key] = function ( ...newArgs )
+				{
+					var returns = constructorContext.originalClass[key]( ...newArgs );
+					console.log( `${this.constructor.name}.${key}(${newArgs.join( ', ' )}) => `, returns );
+					return returns;
+				};
+			};
+		} );
+
+		function globalEventHandler( target )
+		{
+			//This returns a function
+			return function ( ...handlers )
+			{
+				console.log( `${this.constructor.name}.${target} triggered with return`, handlers );
+
+				if ( constructorContext[target] && typeof constructorContext[target] == 'function' )
+					constructorContext[target]( ...handlers );
+			};
+		}
+
+		// install listeners for all natively triggered events
+		for ( const key in constructorContext.originalClass )
+		{
+			if ( /^on/.test( key ) )
+			{
+				constructorContext.originalClass[key] = globalEventHandler( key );
+
+				infos.forEach( function ( key )
+				{
+					if ( typeof constructorContext.originalClass[key] != 'function' )
+						constructorContext[key] = constructorContext.originalClass[key];
+				} );
+
+				//const eventType = key.substr( 2 );
+				//constructorContext.originalClass.addEventListener( eventType, globalEventHandler( key ), true );
+			}
+		}
+
+		// dynamically install listeners for all manually triggered events, just-in-time before they're dispatched ;D
+		const dispatchEvent_original = EventTarget.prototype.dispatchEvent;
+
+		function dispatchEvent( event )
+		{
+			constructorContext.originalClass.addEventListener( event.type, globalEventHandler( event.type ), true );  // multiple identical listeners are automatically discarded
+
+			dispatchEvent_original.apply( constructorContext, arguments );
+		}
+
+		EventTarget.prototype.dispatchEvent = dispatchEvent;
+
+		if ( EventTarget.prototype.dispatchEvent !== dispatchEvent ) throw new Error( `Browser is smarter than you think!` );
+
+		console.log( `Constructed ${this.constructor.name} with:`, args );
+		console.log( this );
+	}
+};
