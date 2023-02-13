@@ -14,6 +14,9 @@ WebSocket = class
 		//If there's inheritance remember to call super() first thing
 		//super();
 
+		//best approach:
+		// return new Proxy( new WebSocket2( ...args ), { get( target, prop, receiver ) { let result = ( typeof target[prop] == 'function' ? function ( ...args ) { var functRes = target[prop].apply( target, args ); console.log( `${typeof target[prop]} ${target.constructor.name}['${prop}'] returns =>`, functRes ); return functRes; } : target[prop] ); console.log( `${typeof target[prop]} ${target.constructor.name}['${prop}'] = ${result}` ); return result; } } );
+	
 		this.originalClass = new window[this.constructor.name]( ...args );
 
 		let constructorContext = this;
